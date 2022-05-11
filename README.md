@@ -1,5 +1,5 @@
 # Zeepkist ReplayMod
-A mod that saves your speedruns to a file for rewatching a run to improve!
+A mod that saves your speedruns to a file to later rewatch!
 > :warning: **Unfinished**: This mod is still under heavy development! Therefore it currently isn't possible to watch `.zeepreplay` files.
 
 ## Installation
