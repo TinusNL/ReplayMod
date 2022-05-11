@@ -4,9 +4,9 @@ A mod that saves your speedruns to a file to later rewatch!
 
 ## Installation
 1. Install [BepInEx](https://github.com/BepInEx/BepInEx/releases/latest). BepInEx is the framework this mod is developed on!
-    1. Download the correct version for you system.
-    2. Drag the files into the ZeepKist source folder. (By Default: `C:\Program Files (x86)\Steam\steamapps\common\Zeepkist`)
-    3. Start the game once.
+    * Download the correct version for you system.
+    * Drag the files into the ZeepKist source folder. (By Default: `C:\Program Files (x86)\Steam\steamapps\common\Zeepkist`)
+    * Start the game once.
 2. Copy the `tinusdll.zeepkist.replaymod.dll` file into `Zeepkist\BepInEx\plugins` folder.
 
 ## How to use
