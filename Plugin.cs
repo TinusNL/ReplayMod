@@ -12,12 +12,18 @@ namespace TinusDLL.Zeepkist.ReplayMod
     [BepInProcess("Zeepkist.exe")]
     public class Plugin : BaseUnityPlugin
     {
+        public static ManualLogSource LogSource = new ManualLogSource(PluginInfo.PLUGIN_NAME);
+
         private static string DocumentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ZeepkistReplays");
 
-        public static ManualLogSource LogSource = new ManualLogSource(PluginInfo.PLUGIN_NAME);
         public static bool IsPlaying = false;
         public static List<KeyValuePair<float, string>> KeyHistory = new List<KeyValuePair<float, string>>();
         
+        public static bool IsReview = false;
+        public static int CurrentReview = 0;
+        public static bool NeedsKill = false;
+
+
         private void Awake()
         {
             BepInEx.Logging.Logger.Sources.Add(LogSource);
@@ -32,60 +38,109 @@ namespace TinusDLL.Zeepkist.ReplayMod
         {
             if (IsPlaying)
             {
-                if (Input.GetKeyDown(KeyCode.UpArrow))
+                if (IsReview)
                 {
-                    KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "UpArrow"));
+                    GameObject SoapBox = GameObject.Find("Soapbox(Clone)");
+
+                    if (SoapBox)
+                    {
+                        ReadyToReset ResetManager = SoapBox.GetComponent<ReadyToReset>();
+                        ResetManager.screenPointer.checkpoints.SetText("This a replay!");
+                        ResetManager.screenPointer.checkpoints.color = Color.red;
+
+                        GameMaster MasterManager = ResetManager.GetMaster();
+                        MasterManager.countFinishCrossing = false;
+
+                        GetInput InputManager = SoapBox.GetComponent<GetInput>();
+                        InputManager.allowControl = false;
+                    }
+                }
+                else
+                {
+                    if (Input.GetKeyDown(KeyCode.UpArrow))
+                    {
+                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "UpArrow"));
+                    }
+
+                    if (Input.GetKeyDown(KeyCode.DownArrow))
+                    {
+                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "DownArrow"));
+                    }
+
+                    if (Input.GetKeyDown(KeyCode.LeftArrow))
+                    {
+                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "LeftArrow"));
+                    }
+
+                    if (Input.GetKeyDown(KeyCode.RightArrow))
+                    {
+                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "RightArrow"));
+                    }
                 }
 
-                if (Input.GetKeyDown(KeyCode.DownArrow))
+                if (Input.GetKeyDown(KeyCode.F10))
                 {
-                    KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "DownArrow"));
-                }
+                    IsReview = !IsReview;
+                    LogSource.LogInfo("IsReview = " + IsReview.ToString());
 
-                if (Input.GetKeyDown(KeyCode.LeftArrow))
-                {
-                    KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "LeftArrow"));
-                }
+                    if (!IsReview)
+                    {
+                        GameObject SoapBox = GameObject.Find("Soapbox(Clone)");
+                        if (SoapBox)
+                        {
+                            ReadyToReset ResetManager = SoapBox.GetComponent<ReadyToReset>();
+                            ResetManager.screenPointer.checkpoints.SetText("Killing...");
+                            ResetManager.screenPointer.checkpoints.color = Color.red;
 
-                if (Input.GetKeyDown(KeyCode.RightArrow))
-                {
-                    KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "RightArrow"));
+                            GameMaster MasterManager = ResetManager.GetMaster();
+                            MasterManager.countFinishCrossing = true;
+
+                            GetInput InputManager = SoapBox.GetComponent<GetInput>();
+                            InputManager.allowControl = true;
+                        }
+
+                        NeedsKill = true;
+                    }
                 }
             }
         }
 
         public static void SaveHistory()
         {
-            PlayerManager GameManager = GameObject.Find("Game Manager").GetComponent<PlayerManager>();
-            LogSource.LogInfo($"{GameManager.currentZeepLevel.name} - {GameManager.currentZeepLevel.author}");
-
-            string TimeFormat = $"{DateTime.Now.Month}-{DateTime.Now.Day}-{DateTime.Now.Year}_{DateTime.Now.Hour}-{DateTime.Now.Minute}-{DateTime.Now.Second}";
-            string FileName = $"{GameManager.currentZeepLevel.name}_{GameManager.currentZeepLevel.author}_{TimeFormat}.zeepreplay";
-            string FilePath = Path.Combine(DocumentsPath, FileName);
-
-            if (!Directory.Exists(DocumentsPath))
+            if (!IsReview)
             {
-                Directory.CreateDirectory(DocumentsPath);
-            }
+                PlayerManager GameManager = GameObject.Find("Game Manager").GetComponent<PlayerManager>();
+                LogSource.LogInfo($"{GameManager.currentZeepLevel.name} - {GameManager.currentZeepLevel.author}");
 
-            using (StreamWriter ReplayFile = new StreamWriter(FilePath))
-            {
-                float FirstTime = 0f;
+                string TimeFormat = $"{DateTime.Now.Month}-{DateTime.Now.Day}-{DateTime.Now.Year}_{DateTime.Now.Hour}-{DateTime.Now.Minute}-{DateTime.Now.Second}";
+                string FileName = $"{GameManager.currentZeepLevel.name}_{GameManager.currentZeepLevel.author}_{TimeFormat}.zeepreplay";
+                string FilePath = Path.Combine(DocumentsPath, FileName);
 
-                ReplayFile.WriteLine("Zeepkist ReplayMod By Tinus#4202");
-
-                foreach (KeyValuePair<float, string> KeySet in KeyHistory)
+                if (!Directory.Exists(DocumentsPath))
                 {
-                    if (FirstTime == 0f)
-                    {
-                        FirstTime = KeySet.Key;
-                    } else
-                    {
-                        ReplayFile.WriteLine($"{KeySet.Key - FirstTime}:{KeySet.Value}");
-                    }
+                    Directory.CreateDirectory(DocumentsPath);
                 }
 
-                ReplayFile.Close();
+                using (StreamWriter ReplayFile = new StreamWriter(FilePath))
+                {
+                    float FirstTime = 0f;
+
+                    ReplayFile.WriteLine("Zeepkist ReplayMod By Tinus#4202");
+
+                    foreach (KeyValuePair<float, string> KeySet in KeyHistory)
+                    {
+                        if (FirstTime == 0f)
+                        {
+                            FirstTime = KeySet.Key;
+                        }
+                        else
+                        {
+                            ReplayFile.WriteLine($"{KeySet.Key - FirstTime}:{KeySet.Value}");
+                        }
+                    }
+
+                    ReplayFile.Close();
+                }
             }
 
             KeyHistory = new List<KeyValuePair<float, string>>();
