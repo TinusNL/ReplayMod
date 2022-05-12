@@ -9,7 +9,6 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
     {
         internal static void Postfix()
         {
-            Plugin.LogSource.LogInfo("StartLevelFirstTimePatch - PostFix");
             Plugin.KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "StartReplay"));
             Plugin.IsPlaying = true;
         }

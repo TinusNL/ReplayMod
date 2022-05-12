@@ -8,9 +8,7 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
     public class DoStartAgainPatch
     {
         internal static void Postfix()
-        {
-            Plugin.LogSource.LogInfo("DoStartAgainPatch - PostFix");
-            
+        {   
             if (Plugin.IsPlaying)
             {
                 Plugin.SaveHistory();

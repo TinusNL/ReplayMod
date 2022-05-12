@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using UnityEngine;
 
 namespace TinusDLL.Zeepkist.ReplayMod.Patches
 {
@@ -15,7 +16,6 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
 
             if (__result && Plugin.IsPlaying)
             {
-                Plugin.LogSource.LogInfo("IsDeadPatch - PostFix");
                 Plugin.IsPlaying = false;
                 Plugin.SaveHistory();
             }

@@ -8,7 +8,7 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
     {
         internal static void Prefix(ref bool finishOrCheckpoint)
         {
-            if (Plugin.IsReview) {
+            if (Plugin.IsReplay) {
                 GameObject SoapBox = GameObject.Find("Soapbox(Clone)");
 
                 if (SoapBox)
