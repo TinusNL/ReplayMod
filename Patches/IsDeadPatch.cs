@@ -11,6 +11,7 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
             if (__result && Plugin.IsPlaying)
             {
                 Plugin.IsPlaying = false;
+                Plugin.SaveReplay();
             }
         }
     }

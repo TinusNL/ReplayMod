@@ -11,10 +11,10 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
         {   
             if (Plugin.IsPlaying)
             {
-                // Save
+                Plugin.SaveReplay();
             }
 
-            Plugin.PhysicsHistory.Add(new KeyValuePair<float, int[]>(Time.time, new int[0]));
+            Plugin.PhysicsHistory.Add(new KeyValuePair<float, Vector3[]>(Time.time, new Vector3[0]));
             Plugin.IsPlaying = true;
         }
     }
