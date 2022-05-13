@@ -16,6 +16,7 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
 
             Plugin.KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "StartReplay"));
             Plugin.IsPlaying = true;
+            Plugin.KeyDebounce = false;
         }
     }
 }

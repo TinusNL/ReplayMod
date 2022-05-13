@@ -18,6 +18,10 @@ namespace TinusDLL.Zeepkist.ReplayMod
 
         private static string DocumentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ZeepkistReplays");
 
+        public static bool KeyDebounce = false;
+        public static bool StoredLeft = false;
+        public static bool StoredRight = false;
+
         public static bool IsPlaying = false;
         public static List<KeyValuePair<float, string>> KeyHistory = new List<KeyValuePair<float, string>>();
         public static List<bool> PressedHistory = new List<bool>();
@@ -34,41 +38,20 @@ namespace TinusDLL.Zeepkist.ReplayMod
 
         public static void SimKeyDown(byte KeyByte)
         {
-            keybd_event(KeyByte, 0, 0x0001 | 0, 0);
+            keybd_event(KeyByte, 0, 0x0001, 0);
         }
 
         public static void SimKeyUp(byte KeyByte)
         {
-            keybd_event(KeyByte, 0, 0x0001 | 0x0002, 0);
-        }
-
-        public static void SimKeyHold(byte KeyByte)
-        {
-            try
-            {
-                while (ActiveKeys.Contains(KeyByte))
-                {
-                    LogSource.LogInfo("KeyByte: " + KeyByte.ToString());
-
-                    SimKeyDown(KeyByte);
-                    Thread.Sleep(10);
-                    SimKeyUp(KeyByte);
-
-                    Thread.Sleep(37);
-                }
-            }
-            catch (Exception Error)
-            {
-                LogSource.LogError(Error);
-            }
+            keybd_event(KeyByte, 0, 0x0002, 0);
         }
 
         private void Awake()
         {
-            PressedHistory.Add(true);
-            PressedHistory.Add(true);
-            PressedHistory.Add(true);
-            PressedHistory.Add(true);
+            PressedHistory.Add(false);
+            PressedHistory.Add(false);
+            PressedHistory.Add(false);
+            PressedHistory.Add(false);
 
             BepInEx.Logging.Logger.Sources.Add(LogSource);
 
@@ -101,8 +84,10 @@ namespace TinusDLL.Zeepkist.ReplayMod
                         MasterManager.countFinishCrossing = false;
                     }
 
-                    if (Input.GetKeyDown(KeyCode.LeftBracket))
+                    if (Input.GetKeyDown(KeyCode.LeftBracket) && !KeyDebounce)
                     {
+                        KeyDebounce = true;
+
                         if (CurrentReplayId - 1 >= 0)
                         {
                             CurrentReplayId -= 1;
@@ -114,8 +99,10 @@ namespace TinusDLL.Zeepkist.ReplayMod
 
                         StartReplay(false);
                     } 
-                    else if (Input.GetKeyDown(KeyCode.RightBracket))
+                    else if (Input.GetKeyDown(KeyCode.RightBracket) && !KeyDebounce)
                     {
+                        KeyDebounce = true;
+
                         if (CurrentReplayId + 1 < CachedReplays.Count)
                         {
                             CurrentReplayId += 1;
@@ -130,56 +117,68 @@ namespace TinusDLL.Zeepkist.ReplayMod
                 }
                 else
                 {
-                    if (Input.GetKeyDown(KeyCode.UpArrow) && PressedHistory[0] == false)
+                    if (Input.GetKey(KeyCode.UpArrow))
                     {
-                        PressedHistory[0] = true;
-                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "38:True"));
+                        if (!PressedHistory[0])
+                        {
+                            PressedHistory[0] = true;
+                            KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "38:True"));
+                        }
                     }
                     else
                     {
-                        if (PressedHistory[0] == true)
+                        if (PressedHistory[0])
                         {
                             PressedHistory[0] = false;
                             KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "38:False"));
                         }
                     }
 
-                    if (Input.GetKeyDown(KeyCode.DownArrow) && PressedHistory[1] == false)
+                    if (Input.GetKey(KeyCode.DownArrow))
                     {
-                        PressedHistory[1] = true;
-                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "40:True"));
+                        if (!PressedHistory[1])
+                        {
+                            PressedHistory[1] = true;
+                            KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "40:True"));
+                        }
                     }
                     else
                     {
-                        if (PressedHistory[1] == true)
+                        if (PressedHistory[1])
                         {
                             PressedHistory[1] = false;
                             KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "40:False"));
                         }
                     }
 
-                    if (Input.GetKeyDown(KeyCode.LeftArrow) && PressedHistory[2] == false)
+                    if (Input.GetKey(KeyCode.LeftArrow))
                     {
-                        PressedHistory[2] = true;
-                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "37:True"));
+                        if (!PressedHistory[2])
+                        {
+                            PressedHistory[2] = true;
+                            KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "37:True"));
+                        }
                     }
                     else
                     {
-                        if (PressedHistory[2] == true)
+                        if (PressedHistory[2])
                         {
                             PressedHistory[2] = false;
                             KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "37:False"));
                         }
                     }
 
-                    if (Input.GetKeyDown(KeyCode.RightArrow) && PressedHistory[3] == false)
+                    if (Input.GetKey(KeyCode.RightArrow))
                     {
-                        PressedHistory[3] = true;
-                        KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "39:True"));
+                        if (!PressedHistory[3])
+                        {
+                            PressedHistory[3] = true;
+                            KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "39:True"));
+                        }
                     }
                     else
                     {
-                        if (PressedHistory[3] == true)
+                        if (PressedHistory[3])
                         {
                             PressedHistory[3] = false;
                             KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "39:False"));
@@ -187,8 +186,9 @@ namespace TinusDLL.Zeepkist.ReplayMod
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.P))
+                if (Input.GetKeyDown(KeyCode.P) && !KeyDebounce)
                 {
+                    KeyDebounce = true;
                     IsReplay = !IsReplay;
 
                     if (!IsReplay)
@@ -247,27 +247,17 @@ namespace TinusDLL.Zeepkist.ReplayMod
                     if (IsPlaying && IsReplay)
                     {
                         float WaitTime = InputTime - LastTime;
-                        LogSource.LogInfo("Waiting: " + WaitTime);
                         Thread.Sleep((int)Math.Round(WaitTime * 1000));
                         LastTime = InputTime;
 
+                        byte KeyByte = byte.Parse(InputSplit[1]);
+
                         if (bool.Parse(InputSplit[2]))
                         {
-                            LogSource.LogInfo("Pressing: " + InputSplit[1]);
-
-                            byte KeyByte = byte.Parse(InputSplit[1]);
-                            ActiveKeys.Add(KeyByte);
                             SimKeyDown(KeyByte);
-
-                            Thread KeyThread = new Thread(new ThreadStart(() => { SimKeyHold(KeyByte); }));
-                            KeyThread.Start();
                         }
                         else
                         {
-                            LogSource.LogInfo("Releasing: " + InputSplit[1]);
-
-                            byte KeyByte = byte.Parse(InputSplit[1]);
-                            ActiveKeys.Remove(KeyByte);
                             SimKeyUp(KeyByte);
                         }
                     }
