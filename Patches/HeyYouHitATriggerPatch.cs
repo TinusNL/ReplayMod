@@ -19,7 +19,6 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
                     if (finishOrCheckpoint)
                     {
                         MasterManager.countFinishCrossing = false;
-                        Plugin.NeedsKill = true;
                     } 
                     else
                     {
