@@ -9,21 +9,16 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
         internal static void Prefix(ref bool finishOrCheckpoint)
         {
             if (Plugin.IsReplay) {
-                GameObject SoapBox = GameObject.Find("Soapbox(Clone)");
-
-                if (SoapBox)
-                {
-                    ReadyToReset ResetManager = SoapBox.GetComponent<ReadyToReset>();
-                    GameMaster MasterManager = ResetManager.GetMaster();
+                ReadyToReset ResetManager = Plugin.SoapBox.GetComponent<ReadyToReset>();
+                GameMaster MasterManager = ResetManager.GetMaster();
                     
-                    if (finishOrCheckpoint)
-                    {
-                        MasterManager.countFinishCrossing = false;
-                    } 
-                    else
-                    {
-                        MasterManager.countFinishCrossing = true;
-                    }
+                if (finishOrCheckpoint)
+                {
+                    MasterManager.countFinishCrossing = false;
+                } 
+                else
+                {
+                    MasterManager.countFinishCrossing = true;
                 }
             }
         }
