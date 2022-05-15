@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 
 namespace TinusDLL.Zeepkist.ReplayMod
 {
@@ -16,11 +17,14 @@ namespace TinusDLL.Zeepkist.ReplayMod
         public static Harmony Harmony = new Harmony(PluginInfo.PLUGIN_GUID);
         public static ManualLogSource LogSource = new ManualLogSource(PluginInfo.PLUGIN_NAME);
         private static string DocumentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ZeepkistReplays");
+        private static NumberFormatInfo FormatInfo = new NumberFormatInfo();
 
         public static bool IsPlaying = false;
         public static PlayerManager GameManager;
         public static ReadyToReset ResetManager;
         public static GameObject SoapBox;
+        public static Rigidbody RigidBodyManager;
+        public static GetInput InputManager;
         public static List<KeyValuePair<int, Vector3[]>> PhysicsHistory = new List<KeyValuePair<int, Vector3[]>>();
 
         public static bool IsReplay = false;
@@ -32,16 +36,16 @@ namespace TinusDLL.Zeepkist.ReplayMod
         
         private static string VectorToString(Vector3 StartVector)
         {
-            return $"{StartVector.x.ToString().Replace(",", ".")},{StartVector.y.ToString().Replace(",", ".")},{StartVector.z.ToString().Replace(",", ".")}";
+            return $"{Math.Round(StartVector.x, 4).ToString().Replace(",", ".")},{Math.Round(StartVector.y, 4).ToString().Replace(",", ".")},{Math.Round(StartVector.z, 4).ToString().Replace(",", ".")}";
         }
 
         private static Vector3 StringToVector(string StartString)
         {
             string[] SplittedString = StartString.Split(',');
 
-            float X = float.Parse(SplittedString[0]);
-            float Y = float.Parse(SplittedString[1]);
-            float Z = float.Parse(SplittedString[2]);
+            float.TryParse(SplittedString[0], NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, FormatInfo, out float X);
+            float.TryParse(SplittedString[1], NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, FormatInfo, out float Y);
+            float.TryParse(SplittedString[2], NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, FormatInfo, out float Z);
 
             return new Vector3(X, Y, Z);
         }
@@ -49,21 +53,16 @@ namespace TinusDLL.Zeepkist.ReplayMod
         private static void RespawnCharacter()
         {
             ResetManager.GetMaster().RestartLevel();
-            /*
-            if (!DamageManager || !DamageManager.gameObject.scene.IsValid())
-            {
-                DamageManager = SoapBox.GetComponent<DamageCharacterScript>();
-            }
-
-            DamageManager.KillCharacter(true, PluginInfo.PLUGIN_GUID);
-            */
         }
         
         private void Awake()
         {
+            Harmony.PatchAll();
+
             BepInEx.Logging.Logger.Sources.Add(LogSource);
 
-            Harmony.PatchAll();
+            FormatInfo.NumberDecimalSeparator = ".";
+            FormatInfo.NegativeSign = "-";
 
             LogSource.LogInfo($"Plugin {PluginInfo.PLUGIN_NAME} is loaded!");
         }
@@ -116,11 +115,16 @@ namespace TinusDLL.Zeepkist.ReplayMod
                                     ReplayId = CachedReplays.Count - 1;
 
                                     LoadReplay();
-                                    RespawnCharacter();
                                 }
                             }
                             else
                             {
+                                if (!InputManager || !InputManager.gameObject.scene.IsValid())
+                                {
+                                    InputManager = SoapBox.GetComponent<GetInput>();
+                                }
+
+                                InputManager.allowControl = true;
                                 RespawnCharacter();
                             }
                         }
@@ -137,7 +141,6 @@ namespace TinusDLL.Zeepkist.ReplayMod
                             }
 
                             LoadReplay();
-                            RespawnCharacter();
                         }
                         else if (Input.GetKeyDown(KeyCode.RightBracket))
                         {
@@ -151,32 +154,51 @@ namespace TinusDLL.Zeepkist.ReplayMod
                             }
 
                             LoadReplay();
-                            RespawnCharacter();
                         }
 
                         if (IsReplay)
                         {
+                            if (!InputManager || !InputManager.gameObject.scene.IsValid())
+                            {
+                                InputManager = SoapBox.GetComponent<GetInput>();
+                            }
+
                             ResetManager.screenPointer.checkpoints.SetText(CachedReplays[ReplayId]);
                             ResetManager.screenPointer.checkpoints.color = Color.red;
+                            InputManager.allowControl = false;
 
                             if (IsRunning)
                             {
-                                Vector3[] CurrentFrameData = FrameData.First(Pair => Pair.Key == FrameId).Value;
+                                if (!RigidBodyManager || !RigidBodyManager.gameObject.scene.IsValid())
+                                {
+                                    RigidBodyManager = SoapBox.GetComponent<Rigidbody>();
+                                }
 
-                                LogSource.LogInfo(CurrentFrameData);
+                                try
+                                {
+                                    KeyValuePair<int, Vector3[]> CurrentFrameData = FrameData.First(Pair => Pair.Key == FrameId);
 
-                                Rigidbody RigidBody = SoapBox.GetComponent<Rigidbody>();
-                                SoapBox.transform.position = CurrentFrameData[0];
-                                SoapBox.transform.eulerAngles = CurrentFrameData[1];
-                                RigidBody.velocity = CurrentFrameData[2];
+                                    SoapBox.transform.position = CurrentFrameData.Value[0];
+                                    SoapBox.transform.eulerAngles = CurrentFrameData.Value[1];
+                                    RigidBodyManager.velocity = CurrentFrameData.Value[2];
+                                }
+                                catch (Exception)
+                                {
+                                    LogSource.LogWarning("Errored on replay! Possibly done?");
+                                    RespawnCharacter();
+                                }
                             }
                         }
                         else
                         {
-                            Rigidbody RigidBody = SoapBox.GetComponent<Rigidbody>();
+                            if (!RigidBodyManager || !RigidBodyManager.gameObject.scene.IsValid())
+                            {
+                                RigidBodyManager = SoapBox.GetComponent<Rigidbody>();
+                            }
+
                             Vector3 Position = SoapBox.transform.position;
                             Vector3 Rotation = SoapBox.transform.eulerAngles;
-                            Vector3 Velocity = RigidBody.velocity;
+                            Vector3 Velocity = RigidBodyManager.velocity;
 
                             PhysicsHistory.Add(new KeyValuePair<int, Vector3[]>(FrameId, new Vector3[] { Position, Rotation, Velocity }));
                         }
@@ -189,7 +211,7 @@ namespace TinusDLL.Zeepkist.ReplayMod
         {
             if (!IsReplay)
             {
-                LogSource.LogInfo("Saving History!");
+                LogSource.LogInfo("Saving Replay!");
 
                 if (!GameManager || !GameManager.gameObject.scene.IsValid())
                 {
@@ -214,18 +236,9 @@ namespace TinusDLL.Zeepkist.ReplayMod
                 {
                     ReplayFile.WriteLine("Zeepkist ReplayMod By Tinus#4202");
 
-                    float FirstTime = 0f;
-
                     foreach (KeyValuePair<int, Vector3[]> KeySet in PhysicsHistory)
                     {
-                        if (FirstTime == 0f)
-                        {
-                            FirstTime = KeySet.Key;
-                        } 
-                        else
-                        {
-                            ReplayFile.WriteLine($"{KeySet.Key - FirstTime}:{VectorToString(KeySet.Value[0])}:{VectorToString(KeySet.Value[1])}:{VectorToString(KeySet.Value[2])}");
-                        }
+                        ReplayFile.WriteLine($"{KeySet.Key}:{VectorToString(KeySet.Value[0])}:{VectorToString(KeySet.Value[1])}:{VectorToString(KeySet.Value[2])}");
                     }
 
                     ReplayFile.Close();
@@ -239,7 +252,7 @@ namespace TinusDLL.Zeepkist.ReplayMod
         {
             if (IsReplay)
             {
-                LogSource.LogInfo("Running Replay!");
+                LogSource.LogInfo("Loading Replay!");
 
                 FrameData.Clear();
 
@@ -261,13 +274,12 @@ namespace TinusDLL.Zeepkist.ReplayMod
                         Vector3 Rotation = StringToVector(InputSplit[2]);
                         Vector3 Velocity = StringToVector(InputSplit[3]);
 
-                        LogSource.LogInfo(InputFrame);
-
                         FrameData.Add(new KeyValuePair<int, Vector3[]>(InputFrame, new Vector3[] { Position, Rotation, Velocity }));
                     }
                 }
 
                 IsRunning = true;
+                RespawnCharacter();
             }
         }
     }

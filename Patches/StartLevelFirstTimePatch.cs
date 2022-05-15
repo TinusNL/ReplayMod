@@ -9,7 +9,6 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
     {
         internal static void Postfix()
         {
-            Plugin.PhysicsHistory.Add(new KeyValuePair<int, Vector3[]>(0, new Vector3[0]));
             Plugin.IsPlaying = true;
             Plugin.FrameId = 0;
         }
