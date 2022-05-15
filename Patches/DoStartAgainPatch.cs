@@ -11,12 +11,11 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
         {   
             if (Plugin.IsPlaying)
             {
-                Plugin.SaveHistory();
+                Plugin.SaveReplay();
             }
 
-            Plugin.KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "StartReplay"));
             Plugin.IsPlaying = true;
-            Plugin.KeyDebounce = false;
+            Plugin.FrameId = 0;
         }
     }
 }

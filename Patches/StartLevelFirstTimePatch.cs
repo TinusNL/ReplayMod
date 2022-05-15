@@ -9,8 +9,8 @@ namespace TinusDLL.Zeepkist.ReplayMod.Patches
     {
         internal static void Postfix()
         {
-            Plugin.KeyHistory.Add(new KeyValuePair<float, string>(Time.time, "StartReplay"));
             Plugin.IsPlaying = true;
+            Plugin.FrameId = 0;
         }
     }
 }
