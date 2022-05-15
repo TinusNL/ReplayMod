@@ -209,7 +209,7 @@ namespace TinusDLL.Zeepkist.ReplayMod
 
         public static void SaveReplay()
         {
-            if (!IsReplay)
+            if (!IsReplay && PhysicsHistory.Count > 200)
             {
                 LogSource.LogInfo("Saving Replay!");
 
